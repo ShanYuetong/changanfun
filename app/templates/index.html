@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {%- if keyword -%}
+    「{{ keyword }}」的搜索结果 · {{ app_name }}
+  {%- elif active_category != "全部" -%}
+    {{ active_category }} · {{ app_name }}
+  {%- else -%}
+    {{ app_name }} · {{ app_tagline }}
+  {%- endif -%}
+{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1 class="hero-title">{{ app_name }}</h1>
+  <p class="hero-tagline">{{ app_tagline }}</p>
+
+  <form class="search-form" action="/" method="get" role="search">
+    {# 提交搜索时保留当前分类，实现「搜索 + 分类」组合生效 #}
+    <input type="hidden" name="category" value="{{ active_category }}">
+    <label class="sr-only" for="search-input">搜索活动</label>
+    <input
+      id="search-input"
+      class="search-input"
+      type="search"
+      name="q"
+      value="{{ keyword }}"
+      placeholder="搜索活动标题、地点或简介，例如：城墙"
+      autocomplete="off"
+    >
+    <button class="btn btn-primary" type="submit">搜索</button>
+    <button class="btn btn-ghost js-clear-search" type="button">清空输入</button>
+    {% if has_filter %}
+      <a class="btn btn-ghost" href="/">清除条件</a>
+    {% endif %}
+  </form>
+</section>
+
+<section class="category-nav" aria-label="活动分类">
+  <h2 class="sr-only">活动分类</h2>
+  <ul class="category-list">
+    {# 「全部」分类：若当前有关键词则保留关键词 #}
+    {% set all_href = '/?q=' ~ (keyword|urlencode) if keyword else '/' %}
+    <li>
+      <a class="category-link{% if active_category == '全部' %} is-active{% endif %}"
+         href="{{ all_href }}"
+         {% if active_category == '全部' %}aria-current="true"{% endif %}>
+        <span class="category-icon" aria-hidden="true">✨</span>
+        <span>全部</span>
+      </a>
+    </li>
+
+    {% for cat in categories %}
+      {# 切换分类时保留当前搜索关键词，两个条件才能同时生效 #}
+      {% set cat_href = '/?category=' ~ cat %}
+      {% if keyword %}
+        {% set cat_href = cat_href ~ '&q=' ~ (keyword|urlencode) %}
+      {% endif %}
+      <li>
+        <a class="category-link{% if active_category == cat %} is-active{% endif %}"
+           href="{{ cat_href }}"
+           {% if active_category == cat %}aria-current="true"{% endif %}>
+          <span class="category-icon" aria-hidden="true">{{ category_icons.get(cat, '•') }}</span>
+          <span>{{ cat }}</span>
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="results" id="events">
+  <div class="results-header">
+    <h2 class="results-title">
+      {% if has_filter %}筛选结果{% else %}全部活动{% endif %}
+    </h2>
+    <p class="results-count">共 {{ total }} 个活动</p>
+  </div>
+
+  {# 当前生效的搜索条件，让用户清楚自己正在看什么 #}
+  {% if has_filter %}
+    <div class="active-filters">
+      <span class="active-filters-label">当前条件：</span>
+      {% if keyword %}
+        {% set keep_cat = '/?category=' ~ active_category if active_category != '全部' else '/' %}
+        <a class="chip" href="{{ keep_cat }}">
+          关键词「{{ keyword }}」<span class="chip-x" aria-hidden="true">×</span>
+        </a>
+      {% endif %}
+      {% if active_category != "全部" %}
+        {% set keep_q = '/?q=' ~ (keyword|urlencode) if keyword else '/' %}
+        <a class="chip" href="{{ keep_q }}">
+          分类「{{ active_category }}」<span class="chip-x" aria-hidden="true">×</span>
+        </a>
+      {% endif %}
+      <a class="clear-all" href="/">全部清除</a>
+    </div>
+  {% endif %}
+
+  {% if events %}
+    <ul class="event-grid">
+      {% for event in events %}
+        <li>
+          <article class="event-card">
+            <a class="event-card-link" href="/events/{{ event.id }}">
+              <div class="event-card-top">
+                <span class="badge badge-category">
+                  <span aria-hidden="true">{{ category_icons.get(event.category, '•') }}</span>
+                  {{ event.category }}
+                </span>
+                <span class="badge badge-price">{{ event.price }}</span>
+              </div>
+              <h3 class="event-title">{{ event.title }}</h3>
+              <p class="event-meta">
+                <span class="meta-item"><span class="meta-label">地点</span>{{ event.venue }}</span>
+                <span class="meta-item"><span class="meta-label">时间</span>{{ event.start_time|timerange_cn(event.end_time) }}</span>
+              </p>
+              <p class="event-desc">{{ event.description }}</p>
+              <span class="event-more">查看详情 →</span>
+            </a>
+          </article>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {# 空状态：分类为空或搜索无结果时的友好提示 #}
+    <div class="empty-state">
+      <p class="empty-icon" aria-hidden="true">🍂</p>
+      <h3 class="empty-title">暂时没有符合条件的活动</h3>
+      <p class="empty-text">
+        {% if keyword and active_category != "全部" %}
+          在「{{ active_category }}」分类下没有找到包含「{{ keyword }}」的活动。换个关键词，或者看看其他分类？
+        {% elif keyword %}
+          没有找到包含「{{ keyword }}」的活动。试试更短的关键词，例如只输入地点名。
+        {% elif active_category != "全部" %}
+          「{{ active_category }}」分类下暂时还没有活动。
+        {% else %}
+          目前还没有任何活动数据。
+        {% endif %}
+      </p>
+      <a class="btn btn-primary" href="/">返回全部活动</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

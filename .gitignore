@@ -1,0 +1,36 @@
+# Python 虚拟环境
+.venv/
+venv/
+env/
+
+# Python 缓存
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 数据库文件（本地数据，不纳入版本管理）
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+
+# 但保留目录占位文件
+!data/.gitkeep
+
+# 环境变量与私人配置
+.env
+.env.local
+
+# 编辑器与系统文件
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# 工具运行时目录
+.reasonix/

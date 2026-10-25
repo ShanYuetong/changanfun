@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}页面不存在 · {{ app_name }}{% endblock %}
+
+{% block content %}
+<section class="error-page">
+  <p class="error-code" aria-hidden="true">404</p>
+  <h1 class="error-title">这条巷子暂时走不通</h1>
+  <p class="error-text">{{ message or "你访问的页面不存在，可能链接已经失效。" }}</p>
+  <div class="error-actions">
+    <a class="btn btn-primary" href="/">返回首页</a>
+    <a class="btn btn-ghost" href="/#events">浏览全部活动</a>
+  </div>
+</section>
+{% endblock %}
