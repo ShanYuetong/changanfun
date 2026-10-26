@@ -1,0 +1,40 @@
+{
+  "name": "长安玩乐指南 · Chang'an Play Guide",
+  "short_name": "长安玩乐",
+  "description": "面向西安大学生的本地娱乐信息聚合网站：电影、展览、演出、校园活动与休闲娱乐。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#faf7f0",
+  "theme_color": "#bf3b2c",
+  "categories": ["entertainment", "lifestyle", "education"],
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/static/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

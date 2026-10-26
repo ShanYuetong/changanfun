@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- maskable 图标：Android 会把图标裁成圆形/圆角方形，
+       只保证中间 80% 的「安全区」可见。
+       因此这里把内容整体缩小到 76%，四周留出足够留白，
+       底色铺满整个画布（不留透明，否则裁切后边缘会露出白边）。 -->
+  <defs>
+    <linearGradient id="bgm" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bf3b2c"/>
+      <stop offset="100%" stop-color="#8d2b21"/>
+    </linearGradient>
+    <linearGradient id="linem" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e0a94a"/>
+      <stop offset="100%" stop-color="#f0d9a8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 底色铺满，无圆角（裁切形状由系统决定） -->
+  <rect width="512" height="512" fill="url(#bgm)"/>
+
+  <!-- 安全区内：内容缩到 76%（512 * 0.76 ≈ 389），居中偏移约 62 -->
+  <g transform="translate(256 256) scale(0.76) translate(-256 -256)">
+    <!-- 城墙台阶 -->
+    <rect x="96" y="392" width="320" height="16" rx="8" fill="#ffffff" opacity="0.16"/>
+    <rect x="128" y="424" width="256" height="14" rx="7" fill="#ffffff" opacity="0.12"/>
+    <rect x="160" y="454" width="192" height="12" rx="6" fill="#ffffff" opacity="0.09"/>
+
+    <!-- 「长」字 -->
+    <g fill="#faf7f0">
+      <rect x="168" y="150" width="176" height="26" rx="13"/>
+      <rect x="196" y="228" width="120" height="24" rx="12"/>
+      <path d="M244 100h26v210c0 18-6 32-18 42-12 10-28 16-48 18l-10-26c18-2 30-6 38-13 8-7 12-16 12-27V100z"/>
+      <path d="M286 232l22-12c26 20 48 44 64 72l-24 16c-16-28-36-52-62-76z"/>
+    </g>
+
+    <rect x="168" y="300" width="176" height="8" rx="4" fill="url(#linem)"/>
+  </g>
+</svg>

@@ -290,3 +290,106 @@ def test_static_css_and_js_are_served(client: TestClient) -> None:
     assert js.status_code == 200
     assert "--color-accent" in css.text
     assert "use strict" in js.text
+
+
+# ---------------- PWA 相关 ----------------
+
+
+def test_manifest_is_served_and_valid(client: TestClient) -> None:
+    """PWA manifest 必须可访问且字段完整。"""
+    response = client.get("/static/manifest.json")
+    assert response.status_code == 200
+
+    data = response.json()
+    for key in ("name", "short_name", "start_url", "display", "theme_color", "icons"):
+        assert key in data, f"manifest 缺少字段 {key}"
+    assert data["display"] == "standalone"
+    assert data["start_url"] == "/"
+    # 至少要有 192 与 512 两种尺寸
+    sizes = {icon["sizes"] for icon in data["icons"]}
+    assert "192x192" in sizes
+    assert "512x512" in sizes
+    # maskable 图标是 Android 自适应图标所必需
+    assert any(icon.get("purpose") == "maskable" for icon in data["icons"])
+
+
+def test_service_worker_is_served_from_root(client: TestClient) -> None:
+    """Service Worker 必须从根路径提供，否则作用域会被限制在 /static/ 下。"""
+    response = client.get("/sw.js")
+    assert response.status_code == 200
+    assert "javascript" in response.headers["content-type"]
+    # 允许 SW 控制全站
+    assert response.headers.get("service-worker-allowed") == "/"
+    # 不能被浏览器长期缓存，否则更新无法生效
+    assert "no-cache" in response.headers.get("cache-control", "")
+    # 关键逻辑必须存在
+    assert "addEventListener" in response.text
+    assert "caches" in response.text
+
+
+def test_service_worker_does_not_cache_api(client: TestClient) -> None:
+    """SW 源码中必须显式跳过 /api/，避免活动数据被缓存成过期内容。"""
+    text = client.get("/sw.js").text
+    assert "/api/" in text
+
+
+def test_offline_page_is_served(client: TestClient) -> None:
+    response = client.get("/static/offline.html")
+    assert response.status_code == 200
+    assert "离线" in response.text
+
+
+def test_pwa_icons_are_served(client: TestClient) -> None:
+    """所有 manifest 声明的图标都必须真实可访问。"""
+    for name in [
+        "icon.svg",
+        "favicon.svg",
+        "icon-192.png",
+        "icon-512.png",
+        "icon-maskable-512.png",
+    ]:
+        response = client.get(f"/static/icons/{name}")
+        assert response.status_code == 200, f"图标 {name} 无法访问"
+        assert len(response.content) > 0
+
+
+def test_base_template_declares_pwa_metadata(client: TestClient) -> None:
+    """页面必须声明 manifest、theme-color 与 iOS 相关 meta。"""
+    html = client.get("/").text
+    assert 'rel="manifest"' in html
+    assert 'name="theme-color"' in html
+    assert "apple-touch-icon" in html
+    assert "apple-mobile-web-app-capable" in html
+
+
+# ---------------- 视觉增强 ----------------
+
+
+def test_category_icons_are_inline_svg(client: TestClient) -> None:
+    """分类图标应为内联 SVG，而不是依赖系统字体渲染的 emoji。"""
+    html = client.get("/").text
+    assert 'class="icon icon-' in html
+    # 原来的 emoji 不应再出现（跨系统渲染不一致）
+    for emoji in ["🎬", "🖼", "🎭", "🎓", "🍃"]:
+        assert emoji not in html, f"页面仍包含 emoji 图标 {emoji}"
+
+
+def test_event_cards_carry_category_color(client: TestClient) -> None:
+    """卡片应带上分类主色变量，用于顶部渐变色带。"""
+    html = client.get("/").text
+    assert "--cat-a:" in html
+    assert "--cat-b:" in html
+
+
+def test_detail_page_has_visual_accent(client: TestClient) -> None:
+    """详情页必须有分类色带作为视觉锚点。"""
+    html = client.get("/events/1").text
+    assert 'class="detail-accent"' in html
+    assert "--cat-a:" in html
+
+
+def test_animations_respect_reduced_motion(client: TestClient) -> None:
+    """动效必须在系统开启「减少动画」时被关闭。"""
+    css = client.get("/static/css/style.css").text
+    assert "prefers-reduced-motion" in css
+    assert "@keyframes fade-up" in css

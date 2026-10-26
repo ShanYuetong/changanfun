@@ -1,62 +1,77 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
+
+{% set colors = category_colors.get(event.category, ('#bf3b2c', '#e08a4a')) %}
 
 {% block title %}{{ event.title }} · {{ app_name }}{% endblock %}
 
 {% block content %}
 <nav class="breadcrumb" aria-label="面包屑导航">
-  <a href="/">← 返回活动列表</a>
+  <a href="/" class="breadcrumb-link">
+    <span aria-hidden="true">{{ icon('arrow-left', 16) }}</span>
+    返回活动列表
+  </a>
 </nav>
 
-<article class="detail">
-  <header class="detail-header">
-    <div class="detail-badges">
-      <span class="badge badge-category">
-        <span aria-hidden="true">{{ category_icons.get(event.category, '•') }}</span>
-        {{ event.category }}
-      </span>
-      <span class="badge badge-price">{{ event.price }}</span>
-    </div>
-    <h1 class="detail-title">{{ event.title }}</h1>
-  </header>
+<article class="detail" style="--cat-a: {{ colors[0] }}; --cat-b: {{ colors[1] }};">
+  {# 视觉锚点：按分类变色的渐变色带，打开详情页时视线有落点 #}
+  <div class="detail-accent" aria-hidden="true"></div>
 
-  <dl class="detail-facts">
-    <div class="fact">
-      <dt>活动地点</dt>
-      <dd>{{ event.venue }}</dd>
-    </div>
-    <div class="fact">
-      <dt>开始时间</dt>
-      <dd>{{ event.start_time|datetime_cn }}</dd>
-    </div>
-    <div class="fact">
-      <dt>结束时间</dt>
-      <dd>{{ event.end_time|datetime_cn if event.end_time else "未标注固定结束时间" }}</dd>
-    </div>
-    <div class="fact">
-      <dt>价格</dt>
-      <dd>{{ event.price }}</dd>
-    </div>
-  </dl>
+  <div class="detail-body">
+    <header class="detail-header">
+      <div class="detail-badges">
+        <span class="badge badge-category">
+          <span class="category-icon">{{ icon(category_icons.get(event.category, 'sparkle'), 14) }}</span>
+          {{ event.category }}
+        </span>
+        <span class="badge badge-price">{{ event.price }}</span>
+      </div>
+      <h1 class="detail-title">{{ event.title }}</h1>
+      <p class="detail-venue">
+        <span class="meta-icon" aria-hidden="true">{{ icon('pin', 16) }}</span>
+        {{ event.venue }}
+      </p>
+    </header>
 
-  <section class="detail-section">
-    <h2>活动介绍</h2>
-    <p class="detail-description">{{ event.description }}</p>
-  </section>
+    <dl class="detail-facts">
+      <div class="fact">
+        <dt>活动地点</dt>
+        <dd>{{ event.venue }}</dd>
+      </div>
+      <div class="fact">
+        <dt>开始时间</dt>
+        <dd>{{ event.start_time|datetime_cn }}</dd>
+      </div>
+      <div class="fact">
+        <dt>结束时间</dt>
+        <dd>{{ event.end_time|datetime_cn if event.end_time else "未标注固定结束时间" }}</dd>
+      </div>
+      <div class="fact">
+        <dt>价格</dt>
+        <dd>{{ event.price }}</dd>
+      </div>
+    </dl>
 
-  <section class="detail-section detail-source">
-    <h2>数据来源</h2>
-    <p>
-      <span class="badge badge-demo">演示数据</span>
-      {{ event.source }}
-    </p>
-    <p class="detail-source-note">
-      本条活动由本地示例数据提供，仅用于演示网站功能，不代表真实票务、场次或价格信息。
-      请勿据此安排实际出行。
-    </p>
-  </section>
+    <section class="detail-section">
+      <h2>活动介绍</h2>
+      <p class="detail-description">{{ event.description }}</p>
+    </section>
 
-  <footer class="detail-footer">
-    <a class="btn btn-primary" href="/">← 返回活动列表</a>
-  </footer>
+    <section class="detail-section detail-source">
+      <h2>数据来源</h2>
+      <p>
+        <span class="badge badge-demo">演示数据</span>
+        {{ event.source }}
+      </p>
+      <p class="detail-source-note">
+        本条活动由本地示例数据提供，仅用于演示网站功能，不代表真实票务、场次或价格信息。
+        请勿据此安排实际出行。
+      </p>
+    </section>
+
+    <footer class="detail-footer">
+      <a class="btn btn-primary" href="/">← 返回活动列表</a>
+    </footer>
+  </div>
 </article>
 {% endblock %}

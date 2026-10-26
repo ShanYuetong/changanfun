@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 
 {% block title %}
   {%- if keyword -%}
@@ -19,15 +20,18 @@
     {# 提交搜索时保留当前分类，实现「搜索 + 分类」组合生效 #}
     <input type="hidden" name="category" value="{{ active_category }}">
     <label class="sr-only" for="search-input">搜索活动</label>
-    <input
-      id="search-input"
-      class="search-input"
-      type="search"
-      name="q"
-      value="{{ keyword }}"
-      placeholder="搜索活动标题、地点或简介，例如：城墙"
-      autocomplete="off"
-    >
+    <div class="search-field">
+      <span class="search-icon" aria-hidden="true">{{ icon('search', 18) }}</span>
+      <input
+        id="search-input"
+        class="search-input"
+        type="search"
+        name="q"
+        value="{{ keyword }}"
+        placeholder="搜索活动标题、地点或简介，例如：城墙"
+        autocomplete="off"
+      >
+    </div>
     <button class="btn btn-primary" type="submit">搜索</button>
     <button class="btn btn-ghost js-clear-search" type="button">清空输入</button>
     {% if has_filter %}
@@ -45,7 +49,7 @@
       <a class="category-link{% if active_category == '全部' %} is-active{% endif %}"
          href="{{ all_href }}"
          {% if active_category == '全部' %}aria-current="true"{% endif %}>
-        <span class="category-icon" aria-hidden="true">✨</span>
+        <span class="category-icon">{{ icon(all_icon, 16) }}</span>
         <span>全部</span>
       </a>
     </li>
@@ -60,7 +64,7 @@
         <a class="category-link{% if active_category == cat %} is-active{% endif %}"
            href="{{ cat_href }}"
            {% if active_category == cat %}aria-current="true"{% endif %}>
-          <span class="category-icon" aria-hidden="true">{{ category_icons.get(cat, '•') }}</span>
+          <span class="category-icon">{{ icon(category_icons.get(cat, 'sparkle'), 16) }}</span>
           <span>{{ cat }}</span>
         </a>
       </li>
@@ -99,20 +103,27 @@
   {% if events %}
     <ul class="event-grid">
       {% for event in events %}
-        <li>
-          <article class="event-card">
+        {% set colors = category_colors.get(event.category, ('#bf3b2c', '#e08a4a')) %}
+        <li class="event-grid-item" style="--i: {{ loop.index0 }};">
+          <article class="event-card" style="--cat-a: {{ colors[0] }}; --cat-b: {{ colors[1] }};">
             <a class="event-card-link" href="/events/{{ event.id }}">
               <div class="event-card-top">
                 <span class="badge badge-category">
-                  <span aria-hidden="true">{{ category_icons.get(event.category, '•') }}</span>
+                  <span class="category-icon">{{ icon(category_icons.get(event.category, 'sparkle'), 14) }}</span>
                   {{ event.category }}
                 </span>
                 <span class="badge badge-price">{{ event.price }}</span>
               </div>
               <h3 class="event-title">{{ event.title }}</h3>
               <p class="event-meta">
-                <span class="meta-item"><span class="meta-label">地点</span>{{ event.venue }}</span>
-                <span class="meta-item"><span class="meta-label">时间</span>{{ event.start_time|timerange_cn(event.end_time) }}</span>
+                <span class="meta-item">
+                  <span class="meta-icon" aria-hidden="true">{{ icon('pin', 14) }}</span>
+                  {{ event.venue }}
+                </span>
+                <span class="meta-item">
+                  <span class="meta-icon" aria-hidden="true">{{ icon('clock', 14) }}</span>
+                  {{ event.start_time|timerange_cn(event.end_time) }}
+                </span>
               </p>
               <p class="event-desc">{{ event.description }}</p>
               <span class="event-more">查看详情 →</span>
@@ -124,7 +135,7 @@
   {% else %}
     {# 空状态：分类为空或搜索无结果时的友好提示 #}
     <div class="empty-state">
-      <p class="empty-icon" aria-hidden="true">🍂</p>
+      <p class="empty-icon" aria-hidden="true">{{ icon('leisure', 44) }}</p>
       <h3 class="empty-title">暂时没有符合条件的活动</h3>
       <p class="empty-text">
         {% if keyword and active_category != "全部" %}

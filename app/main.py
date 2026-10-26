@@ -14,7 +14,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.exception_handlers import http_exception_handler as http_exception_default_handler
-from fastapi.responses import HTMLResponse, JSONResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -62,6 +62,23 @@ setup_templates()
 
 # 静态文件（CSS / JS）
 app.mount("/static", StaticFiles(directory=str(config.STATIC_DIR)), name="static")
+
+
+# Service Worker 必须从站点根路径提供，否则它的默认作用域会被限制在 /static/ 下，
+# 无法接管页面导航请求。/static/sw.js 仍保留，便于直接查看看源码。
+@app.get("/sw.js", include_in_schema=False)
+def service_worker() -> FileResponse:
+    """以根路径提供 Service Worker，使其作用域覆盖整个站点。"""
+    return FileResponse(
+        config.STATIC_DIR / "sw.js",
+        media_type="application/javascript",
+        headers={
+            # 浏览器更新 SW 时会走 HTTP 缓存，这里强制每次校验，避免用户长期用旧版本
+            "Cache-Control": "no-cache, must-revalidate",
+            # 允许 SW 控制根路径下的所有页面
+            "Service-Worker-Allowed": "/",
+        },
+    )
 
 # 路由注册：页面路由在前，API 路由统一挂在 /api 前缀下
 app.include_router(pages.router)

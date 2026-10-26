@@ -58,4 +58,6 @@ def setup_templates() -> None:
         demo_notice=config.DEMO_NOTICE,
         categories=config.CATEGORIES,
         category_icons=config.CATEGORY_ICONS,
+        category_colors=config.CATEGORY_COLORS,
+        all_icon=config.ALL_ICON,
     )

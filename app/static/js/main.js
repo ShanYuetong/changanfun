@@ -44,4 +44,96 @@
       }
     }
   });
+
+  // ---- 4. 注册 Service Worker（PWA） ----
+  // 仅在支持时注册；注册失败不影响页面任何功能。
+  // 放在 load 之后，避免与首屏渲染抢占资源。
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      // 必须用根路径 /sw.js：从 /static/sw.js 注册时，默认作用域会被限制在
+      // /static/ 下，Service Worker 就无法接管页面导航请求。
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {
+        /* 注册失败（如非 HTTPS 环境、浏览器限制）时静默忽略，不影响页面功能 */
+      });
+    });
+  }
+
+  // ---- 5. 「添加到主屏幕」提示 ----
+  // 浏览器触发 beforeinstallprompt 时才有机会展示；已安装或用户拒绝过则不再打扰。
+  var DISMISS_KEY = "changan-install-dismissed";
+  var deferredPrompt = null;
+  var hint = document.getElementById("install-hint");
+  var acceptBtn = document.getElementById("install-accept");
+  var dismissBtn = document.getElementById("install-dismiss");
+
+  function hideHint() {
+    if (hint) {
+      hint.hidden = true;
+    }
+  }
+
+  function hasDismissed() {
+    try {
+      return window.localStorage.getItem(DISMISS_KEY) === "1";
+    } catch (error) {
+      // 隐私模式下 localStorage 可能抛异常，此时按「已拒绝」处理，不打扰用户
+      return true;
+    }
+  }
+
+  function rememberDismiss() {
+    try {
+      window.localStorage.setItem(DISMISS_KEY, "1");
+    } catch (error) {
+      /* 存不下就算了，不影响功能 */
+    }
+  }
+
+  window.addEventListener("beforeinstallprompt", function (event) {
+    // 必须阻止默认的迷你提示条，才能用我们自己样式一致的提示
+    event.preventDefault();
+    deferredPrompt = event;
+
+    if (hint && !hasDismissed()) {
+      hint.hidden = false;
+    }
+  });
+
+  if (acceptBtn) {
+    acceptBtn.addEventListener("click", function () {
+      hideHint();
+      if (!deferredPrompt) {
+        return;
+      }
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(function (choice) {
+        if (choice && choice.outcome === "accepted") {
+          rememberDismiss();
+        }
+        deferredPrompt = null;
+      });
+    });
+  }
+
+  if (dismissBtn) {
+    dismissBtn.addEventListener("click", function () {
+      hideHint();
+      rememberDismiss();
+    });
+  }
+
+  // 已安装（standalone 模式）时不再提示
+  window.addEventListener("appinstalled", function () {
+    hidePrompt();
+    rememberDismiss();
+  });
+
+  function hidePrompt() {
+    hideHint();
+    deferredPrompt = null;
+  }
+
+  if (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) {
+    hideHint();
+  }
 })();

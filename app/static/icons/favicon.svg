@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- 长安玩乐指南 应用图标
+       纯矢量、无外部资源。用于 PWA manifest 与浏览器标签页 favicon。
+       视觉沿用站点配色：朱红渐变底 + 米白「长」字。 -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#bf3b2c"/>
+      <stop offset="100%" stop-color="#8d2b21"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#e0a94a"/>
+      <stop offset="100%" stop-color="#f0d9a8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+
+  <!-- 城墙意象：底部三层台阶 -->
+  <rect x="96" y="392" width="320" height="16" rx="8" fill="#ffffff" opacity="0.16"/>
+  <rect x="128" y="424" width="256" height="14" rx="7" fill="#ffffff" opacity="0.12"/>
+  <rect x="160" y="454" width="192" height="12" rx="6" fill="#ffffff" opacity="0.09"/>
+
+  <!-- 「长」字（用路径绘制的简化字形，避免依赖系统字体） -->
+  <g fill="#faf7f0">
+    <!-- 顶部一横 -->
+    <rect x="168" y="150" width="176" height="26" rx="13"/>
+    <!-- 中间一横 -->
+    <rect x="196" y="228" width="120" height="24" rx="12"/>
+    <!-- 竖撇主体 -->
+    <path d="M244 100h26v210c0 18-6 32-18 42-12 10-28 16-48 18l-10-26c18-2 30-6 38-13 8-7 12-16 12-27V100z"/>
+    <!-- 右侧撇 -->
+    <path d="M286 232l22-12c26 20 48 44 64 72l-24 16c-16-28-36-52-62-76z"/>
+  </g>
+
+  <!-- 底部一条金色装饰线，呼应站点标题下的朱红装饰 -->
+  <rect x="168" y="300" width="176" height="8" rx="4" fill="url(#line)"/>
+</svg>

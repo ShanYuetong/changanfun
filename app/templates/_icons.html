@@ -1,0 +1,66 @@
+{# ============================================================
+   内联 SVG 图标集
+   ------------------------------------------------------------
+   设计要点：
+   1. 全部使用 stroke="currentColor"，自动继承所在文字的颜色，
+      因此在分类导航（灰字 / 选中白字）、卡片徽章、详情页里都能自适应；
+   2. 24×24 视口 + stroke-width 1.75，与 14—16px 的显示尺寸搭配清晰；
+   3. 不引用任何外部文件，图标随模板一次性下发，零额外请求。
+
+   使用方式：
+     {% from "_icons.html" import icon %}
+     {{ icon('film') }}
+     {{ icon('film', 18) }}   {# 指定尺寸 #}
+   ============================================================ #}
+
+{% macro icon(name, size=16) -%}
+<svg class="icon icon-{{ name }}" width="{{ size }}" height="{{ size }}"
+     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"
+     aria-hidden="true" focusable="false">
+  {%- if name == 'film' -%}
+    {# 电影：胶片盘 + 上下齿孔 #}
+    <rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/>
+    <path d="M7 4.5v15M17 4.5v15"/>
+    <path d="M2.5 9.5h4.5M2.5 14.5h4.5M17 9.5h4.5M17 14.5h4.5"/>
+  {%- elif name == 'gallery' -%}
+    {# 展览：画框 + 山与太阳 #}
+    <rect x="3" y="4" width="18" height="16" rx="2.5"/>
+    <circle cx="8.5" cy="9.5" r="1.6"/>
+    <path d="M3.5 17l4.8-4.4a1.6 1.6 0 0 1 2.2 0L15 17"/>
+    <path d="M14 13.2l1.6-1.4a1.6 1.6 0 0 1 2.2 0l2.7 2.5"/>
+  {%- elif name == 'stage' -%}
+    {# 演出：舞台幕布 + 聚光 #}
+    <path d="M4 4v16M20 4v16"/>
+    <path d="M4 4c3.2 0 5.2 2 8 2s4.8-2 8-2"/>
+    <path d="M4 20c3.2 0 5.2-2 8-2s4.8 2 8 2"/>
+    <circle cx="12" cy="12" r="2.4"/>
+  {%- elif name == 'campus' -%}
+    {# 校园：学士帽 #}
+    <path d="M2.5 9L12 4.5 21.5 9 12 13.5 2.5 9z"/>
+    <path d="M6.5 11v5.2c0 1.4 2.5 2.8 5.5 2.8s5.5-1.4 5.5-2.8V11"/>
+    <path d="M21.5 9v5"/>
+  {%- elif name == 'leisure' -%}
+    {# 休闲娱乐：叶子（城市里的松弛感）#}
+    <path d="M20 4c0 8.3-5.2 13-11.3 13A4.7 4.7 0 0 1 4 12.3C4 6.6 10.6 4 20 4z"/>
+    <path d="M4 20c3.2-4.6 7-7.6 11.5-9.5"/>
+  {%- elif name == 'sparkle' -%}
+    {# 全部：星芒 #}
+    <path d="M12 3.2l2.1 5.4 5.4 2.1-5.4 2.1L12 18.2l-2.1-5.4L4.5 10.7l5.4-2.1L12 3.2z"/>
+    <path d="M18.5 16.5l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9.9-2.2z"/>
+  {%- elif name == 'search' -%}
+    <circle cx="10.5" cy="10.5" r="6.5"/>
+    <path d="M15.5 15.5L21 21"/>
+  {%- elif name == 'pin' -%}
+    {# 地点 #}
+    <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z"/>
+    <circle cx="12" cy="10" r="2.6"/>
+  {%- elif name == 'clock' -%}
+    {# 时间 #}
+    <circle cx="12" cy="12" r="8.5"/>
+    <path d="M12 7.5V12l3.2 2"/>
+  {%- elif name == 'arrow-left' -%}
+    <path d="M19 12H5M11 6l-6 6 6 6"/>
+  {%- endif -%}
+</svg>
+{%- endmacro %}
