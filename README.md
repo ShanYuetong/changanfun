@@ -122,6 +122,7 @@ python run.py
 | --- | --- |
 | `GET /api/health` | 服务状态、版本、数据库连通性、当前活动总数 |
 | `GET /api/events` | 活动列表，返回 `total / limit / offset / items` |
+| `POST /api/events` | **新增活动**（需要管理密钥，见下） |
 | `GET /api/events/{event_id}` | 单个活动详情，不存在返回 404 |
 
 `GET /api/events` 支持的可选参数：
@@ -141,6 +142,58 @@ curl "http://127.0.0.1:8000/api/events?q=城墙&category=演出&limit=10&offset=
 
 参数非法时（如 `limit=0`、`limit=abc`、`offset=-1`）返回 **HTTP 422** 与具体的校验信息；
 活动不存在返回 **HTTP 404**。
+
+### 新增活动：POST /api/events
+
+添加活动属于写操作，**必须带管理密钥**，否则任何人都能往你的数据库里写内容。
+
+**第一步：设置密钥并重启服务**
+
+```powershell
+# Windows PowerShell
+$env:CHANGAN_ADMIN_TOKEN="自己定一个足够长的随机字符串"
+python run.py
+```
+
+```bash
+# macOS / Linux
+export CHANGAN_ADMIN_TOKEN="自己定一个足够长的随机字符串"
+python run.py
+```
+
+**第二步：带 `X-Admin-Token` 请求头提交**
+
+请求体字段（`end_time` 可省略）：
+
+```json
+{
+  "title": "城墙夜跑团",
+  "category": "休闲娱乐",
+  "venue": "永宁门广场",
+  "start_time": "2026-07-01T19:30:00",
+  "end_time": "2026-07-01T21:00:00",
+  "price": "免费",
+  "description": "沿城墙夜跑五公里的自发活动。",
+  "source": "手工录入 · 主办方公告"
+}
+```
+
+响应码含义：
+
+| 状态码 | 含义 |
+| --- | --- |
+| `201` | 创建成功，返回包含 `id` 的完整记录 |
+| `401` | 未带密钥或密钥不正确 |
+| `409` | 已存在相同「标题 + 地点 + 开始时间」的活动（防重复提交） |
+| `422` | 参数不合法（分类不在允许范围、文本为空、结束时间早于开始时间、时间带时区等） |
+| `503` | **服务端未配置 `CHANGAN_ADMIN_TOKEN`，写接口已禁用** |
+
+> ⚠️ **安全说明**
+>
+> - 未配置密钥时写接口**一律拒绝**（返回 503），不会因为「忘记配置」而变成人人可写。
+> - 密钥只从环境变量读取，**不会写进代码或提交到仓库**。`.gitignore` 已忽略 `.env` 类文件。
+> - 服务默认只绑定 `127.0.0.1`，外部设备本来就访问不到；即使将来对外提供服务，
+>   也请务必用足够长的随机字符串，并放在 HTTPS 后面。
 
 ---
 
@@ -318,11 +371,32 @@ Get-NetTCPConnection -LocalPort 8000 | Select-Object OwningProcess
 `python -m pytest -q`。加 `-v` 可以看到每个用例的名字；
 只想跑某一类测试可以指定文件，例如 `python -m pytest tests/test_api.py -q`。
 
-**Q8：页面样式没有生效？**
+**Q8：怎样添加一个活动？**
+
+推荐用 `POST /api/events` 接口，需要先设置管理密钥（见上文「新增活动」一节）。
+也可以更简单：直接编辑 `app/seed.py` 的 `DEMO_EVENTS` 列表，然后删掉 `data/changan.db` 重启，
+会重新导入全部数据——但这样做会丢失你通过接口添加过的记录，所以**先备份**。
+
+**Q9：调用新增接口时返回 503 是什么原因？**
+
+服务端没有配置 `CHANGAN_ADMIN_TOKEN`。这是有意的安全设计：**没配置就禁止写入**，
+避免「忘记配置」导致任何人都能往数据库里写内容。
+设置环境变量后需要**重启服务**才会生效：
+
+```powershell
+$env:CHANGAN_ADMIN_TOKEN="你的密钥"
+python run.py
+```
+
+**Q10：页面样式没有生效？**
 
 确认服务是从项目根目录启动的（`python run.py`），并强制刷新浏览器
 （Windows：`Ctrl + F5`）。静态文件通过 `/static/...` 提供，可先直接访问
 <http://127.0.0.1:8000/static/css/style.css> 确认是否返回 200。
+
+> 如果代码更新后页面看起来没变化，可能是旧的 Service Worker 还在提供缓存页面。
+> 打开浏览器开发者工具 → Application → Service Workers → 勾选「Update on reload」，
+> 或点击「Unregister」后刷新一次即可。
 
 ---
 

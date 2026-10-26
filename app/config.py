@@ -51,6 +51,22 @@ def ensure_data_dir() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
+# ---------------- 写接口（新增活动）的访问控制 ----------------
+# 添加活动属于写操作，不能对所有人开放，否则任何人都能污染数据。
+# 密钥通过环境变量 CHANGAN_ADMIN_TOKEN 提供；未设置时写接口一律拒绝（fail closed），
+# 而不是「没配置就放行」——后者是常见的安全事故来源。
+ADMIN_TOKEN_ENV = "CHANGAN_ADMIN_TOKEN"
+
+
+def get_admin_token() -> str | None:
+    """返回当前配置的管理密钥；未配置时返回 None。"""
+    token = os.environ.get(ADMIN_TOKEN_ENV)
+    if token is None:
+        return None
+    token = token.strip()
+    return token or None
+
+
 # 活动分类（顺序即页面导航顺序，"全部"由页面单独处理）
 CATEGORIES = ["电影", "展览", "演出", "校园活动", "休闲娱乐"]
 

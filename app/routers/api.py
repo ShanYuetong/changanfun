@@ -1,23 +1,116 @@
 """JSON API 路由。
 
 接口：
-- GET /api/health          健康检查
-- GET /api/events          活动列表（支持 q / category / limit / offset）
-- GET /api/events/{id}     活动详情
+- GET  /api/health          健康检查
+- GET  /api/events          活动列表（支持 q / category / limit / offset）
+- POST /api/events          新增活动（需要管理密钥）
+- GET  /api/events/{id}     活动详情
 
 参数校验交给 FastAPI + Pydantic：
 limit / offset 通过 Query(ge=..., le=...) 约束，非法时自动返回 422 验证错误。
+
+写接口的访问控制：请求头需带 X-Admin-Token，值与环境变量 CHANGAN_ADMIN_TOKEN 一致。
+未配置密钥时写接口一律返回 503（fail closed），不会因为「忘记配置」而变成人人可写。
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Query
+import secrets
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, status
 from sqlalchemy.orm import Session
 
 from app import config, crud, schemas
 from app.database import get_db
 
 router = APIRouter()
+
+
+def require_admin_token(
+    x_admin_token: str | None = Header(
+        default=None,
+        alias="X-Admin-Token",
+        description="管理密钥，需与环境变量 CHANGAN_ADMIN_TOKEN 一致",
+    ),
+) -> None:
+    """校验写接口的管理密钥。
+
+    两种失败分开处理，便于排查：
+    - 服务端没配置密钥 → 503，表示「这个功能还没开启」，而不是客户端密码错
+    - 客户端没带或带错 → 401
+
+    比较使用 secrets.compare_digest：普通 == 会在第一个不同字符处提前返回，
+    理论上可通过响应时间差异逐字符猜出密钥，常数时间比较能避免这一点。
+    """
+    expected = config.get_admin_token()
+    if expected is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "服务端未配置管理密钥，写接口已禁用。"
+                f"请设置环境变量 {config.ADMIN_TOKEN_ENV} 后重启服务。"
+            ),
+        )
+
+    provided = (x_admin_token or "").strip()
+    if not provided or not secrets.compare_digest(provided, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="管理密钥缺失或不正确",
+            headers={"WWW-Authenticate": "X-Admin-Token"},
+        )
+
+
+@router.post(
+    "/events",
+    response_model=schemas.EventOut,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin_token)],
+    responses={
+        201: {"description": "创建成功"},
+        401: {"description": "管理密钥缺失或不正确"},
+        409: {"description": "已存在相同标题、地点与开始时间的活动"},
+        422: {"description": "参数验证失败"},
+        503: {"description": "服务端未配置管理密钥，写接口已禁用"},
+    },
+    summary="新增活动（需要管理密钥）",
+)
+def create_event(
+    payload: schemas.EventCreate,
+    db: Session = Depends(get_db),
+) -> schemas.EventOut:
+    """新增一条活动记录。
+
+    校验顺序：先说清楚为什么拒绝，再决定要不要写。
+    1. 参数格式由 EventCreate 校验（分类合法、文本非空、时间关系正确），失败返回 422；
+    2. 查重：标题 + 地点 + 开始时间完全相同视为重复，返回 409 并带上已存在的 ID，
+       避免重复提交（例如网络重试）产生多条相同记录；
+    3. 写入并返回 201 与新记录的完整内容。
+    """
+    existing = crud.find_duplicate_event(
+        db,
+        title=payload.title,
+        venue=payload.venue,
+        start_time=payload.start_time,
+    )
+    if existing is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"已存在相同活动（ID {existing.id}）：{existing.title}",
+        )
+
+    event = crud.create_event(
+        db,
+        title=payload.title,
+        category=payload.category,
+        venue=payload.venue,
+        start_time=payload.start_time,
+        end_time=payload.end_time,
+        price=payload.price,
+        description=payload.description,
+        source=payload.source,
+    )
+    return schemas.EventOut.model_validate(event)
 
 
 @router.get("/health", response_model=schemas.HealthResponse, summary="健康检查")

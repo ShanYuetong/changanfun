@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -104,9 +106,41 @@ def get_event(db: Session, event_id: int) -> Event | None:
 
 
 def create_event(db: Session, **fields: object) -> Event:
-    """创建一条活动记录（示例数据导入与测试使用）。"""
+    """创建一条活动记录。
+
+    供示例数据导入、API 新增活动与测试共同使用。
+    写入失败时回滚事务，避免会话停留在脏状态导致同一请求内的后续操作全部失败。
+    """
     event = Event(**fields)  # type: ignore[arg-type]
     db.add(event)
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     db.refresh(event)
     return event
+
+
+def find_duplicate_event(
+    db: Session,
+    *,
+    title: str,
+    venue: str,
+    start_time: datetime,
+) -> Event | None:
+    """查找可能重复的活动：标题、地点、开始时间三者完全相同。
+
+    MVP 阶段用「完全相同」作为判重标准，简单且不会误伤。
+    真实数据接入后可改为模糊匹配（见文档第 9 章的清洗与去重一节）。
+    """
+    statement = (
+        select(Event)
+        .where(
+            Event.title == title,
+            Event.venue == venue,
+            Event.start_time == start_time,
+        )
+        .limit(1)
+    )
+    return db.scalars(statement).first()
